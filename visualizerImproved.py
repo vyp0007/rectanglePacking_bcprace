@@ -63,8 +63,8 @@ class VisualizerApp:
         # view transform
         self.shiftX = 0
         self.shiftY = 0
-        self.base_scale = 1.0   # fit-to-width scale
-        self.zoom = 1.0         # user zoom multiplier
+        self.base_scale = 1.0   
+        self.zoom = 1.0         
 
         # mouse pan state
         self._last_mouse_x = None
@@ -79,7 +79,7 @@ class VisualizerApp:
         self._build_ui()
         self.bindKeys()
 
-        # Trigger initial load via callback (no container needed in __init__)
+      
         self._fire_generation_changed()
 
     # ======================================================

@@ -11,14 +11,8 @@ class PySwarmsPSO:
         self.rectangles = rectangles
         self.containerWidth = containerWidth
         self.config = config
-        self.current_generation = 0
-        self.global_best_cost = float("inf")
-        self.global_best_stats = None
 
-        self.n_rects = len(rectangles)
-        self.tracker : ExperimentTracker = None
-        self.best_stats = None
-        self.iterCount = 0
+        
 
         #hyperparameters
         options = {
@@ -33,7 +27,14 @@ class PySwarmsPSO:
             options=options,
             bounds=(np.zeros(self.n_rects), np.ones(self.n_rects)),
         )
-
+        # STAT TRACKING
+        self.n_rects = len(rectangles)
+        self.tracker : ExperimentTracker = None
+        self.best_stats = None
+        self.iterCount = 0
+        self.current_generation = 0
+        self.global_best_cost = float("inf")
+        self.global_best_stats = None
         self.best_cost = None
         self.best_position = None
         self.best_solutions = []
@@ -43,7 +44,7 @@ class PySwarmsPSO:
     def myFitnessFunc(self, swarm_positions):
         """
         swarm_positions shape: (n_particles, n_rectangles)
-        Returns array of costs (container heights)
+        Returns array of costs (container density)
         """
         costs = []
         new_best_found = False
