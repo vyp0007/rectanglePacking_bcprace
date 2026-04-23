@@ -7,14 +7,20 @@ from utils.stats.experimentTracker import ExperimentTracker
 
 
 class PySwarmsPSO:
-    def __init__(self, rectangles, containerWidth, config: dict):
+    def __init__(self, rectangles, containerWidth, config: dict, store_best_solution_per_gen : bool = True):
         self.rectangles = rectangles
         self.containerWidth = containerWidth
         self.config = config
+        self.current_generation = 0
+        self.global_best_cost = float("inf")
+        self.global_best_stats = None
 
         self.n_rects = len(rectangles)
+        self.tracker : ExperimentTracker = None
+        self.best_stats = None
+        self.iterCount = 0
 
-        # PSO hyperparameters
+        #hyperparameters
         options = {
             "c1": config.get("c1", 1.5),  # cognitive parameter
             "c2": config.get("c2", 1.5),  # social parameter
@@ -30,7 +36,8 @@ class PySwarmsPSO:
 
         self.best_cost = None
         self.best_position = None
-        self.cost_history = []
+        self.best_solutions = []
+        self.storeSolutions = store_best_solution_per_gen
 
     def myFitnessFunc(self, swarm_positions):
         """
@@ -39,20 +46,66 @@ class PySwarmsPSO:
         """
         costs = []
 
+        best_cost = float("inf")
+        best_stats = None
+        this_gen_best_sol = None
+
         for particle in swarm_positions:
             sorted_input = sort_with_keys(self.rectangles, particle)
             cont = bottom_left_fill(self.containerWidth, sorted_input, False)
+            density = cont.getDensity()
+            height = cont.height
+            width = cont.width
+            cost = 1000 - density * 1000
+            costs.append(cost)
+            self.iterCount += 1
 
-            costs.append(cont.height)
+            if cost < best_cost:
+                best_cost = cost
+                best_stats = {
+                    "best_score": 1.0 / cost if cost > 0 else 0,
+                    "best_height": height,
+                    "best_width": width,
+                    "best_density": density
+                }
+                if self.storeSolutions:
+                     this_gen_best_sol = particle
+
+            if cost < self.global_best_cost:
+                self.global_best_cost = cost
+                self.global_best_stats = {
+                    "best_score": 1.0 / cost if cost > 0 else 0,
+                    "best_height": height,
+                    "best_width": width,
+                    "best_density": density
+                }
+
+        
+        
+        if self.tracker:
+            self.tracker.log(
+                generation=self.current_generation,
+                best_score=best_stats["best_score"],
+                best_height=best_stats["best_height"],
+                best_width=best_stats["best_width"],
+                best_density=best_stats["best_density"],
+            )
+        
+        if self.storeSolutions:
+            self.best_solutions.append(this_gen_best_sol)
+        
+        self.current_generation += 1
 
         return np.array(costs)
 
     
     def run(self, tracker=None):
         iters = self.config.get("iters", 50)
+        self.tracker = tracker
+        self.current_generation = 0
 
-        if tracker:
-            tracker.start()
+        if self.tracker:
+            self.tracker.start()
 
         cost, pos = self.optimizer.optimize(
             self.myFitnessFunc,
@@ -60,50 +113,13 @@ class PySwarmsPSO:
             verbose=False
         )
 
-        self.best_cost = cost
-        self.best_position = pos
-
-        for i, c in enumerate(self.optimizer.cost_history):
-            if tracker:
-                tracker.log(
-                    generation=i,
-                    best_score=1.0 / c,
-                    best_height=c
-                )
+        #self.best_cost = cost
+        #self.best_position = pos
 
         return {
             "solution": pos,
+            "density": self.global_best_stats["best_density"],
             "fitness": 1.0 / cost,
-            "height": cost
+            "height": self.global_best_stats["best_height"]
         }
 
-    """
-    def run(self, tracker=None):
-        iters = self.config.get("iters", 50)
-
-        if tracker:
-            tracker.start()
-
-        for i in range(iters):
-            cost, pos = self.optimizer.optimize(
-                self.myFitnessFunc,
-                iters=1,
-                verbose=False
-            )
-
-            self.best_cost = cost
-            self.best_position = pos
-
-            if tracker:
-                tracker.log(
-                    generation=i,
-                    best_score=1.0 / cost,
-                    best_height=cost
-                )
-
-        return {
-            "solution": self.best_position,
-            "fitness": 1.0 / self.best_cost,
-            "height": self.best_cost
-        }
-    """

@@ -4,7 +4,7 @@ from itertools import product
 
 from geneticAlgorithms.simannealSA import SimulatedAnnealing
 from tuning.experimentRunner import ExperimentRunner
-from rectangle import Rectangle
+from basicComponents.rectangle import Rectangle
 from utils.rectangleFileLoader import load_rectangles_from_json
 
 

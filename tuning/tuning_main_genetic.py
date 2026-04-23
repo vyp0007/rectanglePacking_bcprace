@@ -1,6 +1,6 @@
 import random
 import pandas as pd
-from rectangle import Rectangle
+from basicComponents.rectangle import Rectangle
 from geneticAlgorithms.pygadGenetic import PygadGA
 from tuning.experimentRunner import ExperimentRunner
 

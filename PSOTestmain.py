@@ -15,17 +15,17 @@ def build_container_from_solution(solution, rectangles, width):
 
 if __name__ == "__main__":
     width, rectangles = load_rectangles_from_json("problems/mid_256.json")
-    tracker = ExperimentTracker()
+    tracker = ExperimentTracker("tracker name")
 
     config = {
-        "iters": 50,
-        "n_particles": 30,
+        "iters": 75,
+        "n_particles": 75,
         "c1": 1.5,
         "c2": 1.5,
         "w": 0.7,
     }
 
-    pso = pyswarmsPSO.PySwarmsPSO(rectangles, width, config)
+    pso = pyswarmsPSO.PySwarmsPSO(rectangles, width, config, True)
     
 
     start_time = time.perf_counter()
@@ -33,11 +33,19 @@ if __name__ == "__main__":
     end_time = time.perf_counter()
 
     solution = result["solution"]
-    
 
-    print("SOLUTION: ",solution)
+    """
+    i = 0
+    for historicalSolution in pso.genBestSolutions:
+        print(f"generation {i} best solution avg: {sum(historicalSolution)/len(historicalSolution)}")
+        i +=1
+    """
+
+    #print("SOLUTION: ",solution)
     print(f"runPSO took {end_time - start_time:.6f} seconds")
     print("Best height:", result["height"])
+
+
 
     app = VisualizerApp(
         num_generations=1,
@@ -47,6 +55,7 @@ if __name__ == "__main__":
         canvas_height=600,
     )
 
+    """
     def on_gen_changed(gen_idx):
         #solution = result
         container = build_container_from_solution(solution, rectangles, width)
@@ -64,3 +73,4 @@ if __name__ == "__main__":
     on_gen_changed(0)
 
     app.run()
+    """

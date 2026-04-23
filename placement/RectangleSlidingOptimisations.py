@@ -1,7 +1,7 @@
 from basicComponents.rectangle import Rectangle
 from basicComponents.dynamicContainer import DynamicContainer
 from basicComponents.rectangle import Position
-
+from placement.placement_utils.SortedListsForSliding import RectangleSortedList
 
 def overlaps_y(rect : Rectangle, y, h):
     return not (rect.y + rect.height <= y or y + h <= rect.y)
@@ -9,7 +9,7 @@ def overlaps_y(rect : Rectangle, y, h):
 def overlaps_x(rect: Rectangle, x, w):
     return not (rect.x + rect.width <= x or x + w <= rect.x)
 
-def slide_horizontal(rect : Rectangle, candidatePos : Position,container : DynamicContainer):
+def slide_horizontal(rect : Rectangle, candidatePos : Position,container : DynamicContainer, placedRects : RectangleSortedList):
     """
     Adjust rect.x while keeping rect.y fixed.
     Returns Position or none
@@ -18,20 +18,32 @@ def slide_horizontal(rect : Rectangle, candidatePos : Position,container : Dynam
     x_L = 0
     x_R = container.width
 
-    placed_rectangles = container.rectangles
 
-    for r in placed_rectangles:
-        # filter rectangles taht cannot collide due to Y
+    # FIND MAX LEFT
+    for r in placedRects.iter_right_desc():
+        #filter rectangles taht cannot collide due to Y
         if not overlaps_y(r, candidatePos.y, rect.height):
             continue
 
-        # Decide group (left/right)
+        #decide group left/right
         if r.x + r.width / 2 <= candidatePos.x + rect.width / 2:
-            # adjust X_L
-            x_L = max(x_L, r.x + r.width)
+            # LEFT
+            x_L = r.x + r.width
+            break
+        
+
+    for r in placedRects.by_left:
+        #filter rectangles taht cannot collide due to Y
+        if not overlaps_y(r, candidatePos.y, rect.height):
+            continue
+
+        #decide group left/right
+        if r.x + r.width / 2 <= candidatePos.x + rect.width / 2:
+           continue
         else:
-            # adjust X_R
-            x_R = min(x_R, r.x - rect.width)
+            # RIGHT
+            x_R = r.x - rect.width
+            break
 
     # Check feasibility
     if x_L > x_R:
@@ -41,7 +53,7 @@ def slide_horizontal(rect : Rectangle, candidatePos : Position,container : Dynam
 
     return Position(x_L,candidatePos.y)
 
-def slide_vertical(rect: Rectangle, candidatePos: Position, container: DynamicContainer):
+def slide_vertical(rect: Rectangle, candidatePos: Position, container: DynamicContainer, placedRects : RectangleSortedList):
     """
     Adjust rect.y while keeping rect.x fixed.
     Returns Position or None.
@@ -50,20 +62,33 @@ def slide_vertical(rect: Rectangle, candidatePos: Position, container: DynamicCo
     y_B = 0
     y_A = container.height
 
-    for r in container.rectangles:
-        # Filter rectangles that cannot collide due to X
+    #FIND MAX BELOW
+    for r in placedRects.iter_top_desc():
+        #filter rectangles that cannot collide due to X
         if not overlaps_x(r, candidatePos.x, rect.width):
             continue
 
-        # Decide group (bottom/top)
+        #decide group bottom/top
         if r.y + r.height / 2 <= candidatePos.y + rect.height / 2:
             # BELOW 
-            y_B = max(y_B, r.y + r.height)
+            y_B = r.y + r.height
+            break
+        
+    #FIND MIN ABOVE
+    for r in placedRects.by_bottom:
+        #filter rectangles that cannot collide due to X
+        if not overlaps_x(r, candidatePos.x, rect.width):
+            continue
+
+        #decide group bottom/top
+        if r.y + r.height / 2 <= candidatePos.y + rect.height / 2:
+            continue
         else:
             # ABOVE 
-            y_A = min(y_A, r.y - rect.height)
+            y_A = r.y - rect.height
+            break
 
-    # Check feasibility
+    #check feasibility
     if y_B > y_A:
         return None
 
@@ -75,7 +100,7 @@ def evaluatePosition(rectangle : Rectangle, position : Position, container : Dyn
     testRes = container.testRectanglePlacement(rectangle,position)
     return testRes[0] * testRes[1]
 
-def findPostion(rect: Rectangle, container: DynamicContainer, positions : set[Position],direction: float) -> Position:
+def findPostion(rect: Rectangle, container: DynamicContainer, positions : set[Position],direction: float, placedRects : RectangleSortedList) -> Position:
     """finds best position for placing the provided rectangle to the container"""
 
     best_pos = None
@@ -83,20 +108,20 @@ def findPostion(rect: Rectangle, container: DynamicContainer, positions : set[Po
 
     for p in positions:
         if direction < 0.5:
-            pos1 = slide_horizontal(rect, p, container)
+            pos1 = slide_horizontal(rect, p, container, placedRects)
             if pos1 is None:
                 continue
 
-            pos2 = slide_vertical(rect, pos1, container)
+            pos2 = slide_vertical(rect, pos1, container, placedRects)
             if pos2 is None:
                 continue
 
         else:
-            pos1 = slide_vertical(rect, p, container)
+            pos1 = slide_vertical(rect, p, container, placedRects)
             if pos1 is None:
                 continue
 
-            pos2 = slide_horizontal(rect, pos1, container)
+            pos2 = slide_horizontal(rect, pos1, container, placedRects)
             if pos2 is None:
                 continue
 
@@ -173,36 +198,6 @@ def project_vertical(x: float, y: float, container: DynamicContainer) -> Positio
 
     return Position(x, best_y)
 
-def cleanPositions(positions: set[Position], container: DynamicContainer) -> None:
-    """
-    Remove positions that have zero open space in either axis,
-    meaning no rectangle of any size could be placed there.
-    Mutates the positions set in-place.
-    """
-    dead = set()
-
-    for p in positions:
-        open_w = container.width - p.x
-        open_h = container.height - p.y
-
-        for r in container.rectangles:
-            # Tighten the available width: nearest rectangle to the right
-            # that overlaps vertically with p.y
-            if r.y < container.height and r.y + r.height > p.y:
-                if r.x >= p.x:
-                    open_w = min(open_w, r.x - p.x)
-
-            # Tighten the available height: nearest rectangle above
-            # that overlaps horizontally with p.x
-            if r.x < container.width and r.x + r.width > p.x:
-                if r.y >= p.y:
-                    open_h = min(open_h, r.y - p.y)
-
-        if open_w <= 0 or open_h <= 0:
-            dead.add(p)
-
-    positions -= dead
-
 def addPositions(newRectangle: Rectangle, container: DynamicContainer, positions: set[Position]):
 
     x = newRectangle.x
@@ -214,8 +209,8 @@ def addPositions(newRectangle: Rectangle, container: DynamicContainer, positions
     positions.add(Position(newRectangle.x + newRectangle.width,newRectangle.y))
     positions.add(Position(newRectangle.x + newRectangle.width,newRectangle.y + newRectangle.height))
 
-    """
     #vertically projected point
+    """
     v_proj = project_vertical(x + w, y, container)
     if v_proj is not None:
         positions.add(v_proj)
@@ -231,14 +226,15 @@ def rectangle_sliding(rectangles: list[Rectangle], initialDirections : list[floa
     positions = set()
     positions.add(Position(0,0))
     cont = DynamicContainer()
+    placedSorted = RectangleSortedList()
     for r, direction in zip(rectangles, initialDirections):
-        rectPosition = findPostion(r,cont,positions,direction)
+        rectPosition = findPostion(r,cont,positions,direction,placedSorted)
         if rectPosition is None:
             raise ValueError(f"Failed to place rectangle: {r}")
         r.setPosition(rectPosition)
         cont.add_rectangle(r)
         addPositions(r,cont,positions)
-        cleanPositions(positions, cont)
+        placedSorted.add(r)
 
     
     return cont

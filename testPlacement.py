@@ -10,7 +10,7 @@ def build_container_from_solution(solution, rectangles, width):
     return bottom_left_fill(width, sorted_rects)
 
 if __name__ == "__main__":
-    width, rectangles = load_rectangles_from_json("problems/mid_256.json")
+    width, rectangles = load_rectangles_from_json("problems/large_600.json")
 
     app = VisualizerApp(
         num_generations=1,

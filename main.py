@@ -33,31 +33,8 @@ if __name__ == "__main__":
 
     print(f"runGA took {end_time - start_time:.6f} seconds")
 
-    """
-    config = {
-        "iters": 100,
-        "n_particles": 50,
-        "c1": 1.5,
-        "c2": 1.5,
-        "w": 0.7,
-    }
-
-    pso = pyswarmsPSO.PySwarmsPSO(rectangles, width, config)
-    
-
-    start_time = time.perf_counter()
-    result = pso.run(tracker)
-    end_time = time.perf_counter()
-
-    solution = result["solution"]
-    
-
-    print("SOLUTION: ",solution)
-    print(f"runPSO took {end_time - start_time:.6f} seconds")
-    print("Best height:", result["height"])
-    """
     tracker.save_csv("./algorithmStats/testStats.csv")
-    ExperimentVisualizer.plot_from_csv("./algorithmStats/testStats.csv")
+    #ExperimentVisualizer.plot_from_csv("./algorithmStats/testStats.csv")
 
 
     generations = ga.ga_instance.best_solutions
