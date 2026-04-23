@@ -19,17 +19,16 @@ class VisualizerApp:
     Zoom in / out
     Pan via keyboard or mouse drag
 
-    Usage
-    -----
+    Usage:
     versions = [
-        AlgorithmVersion("Baseline BLF", num_generations=50),
-        AlgorithmVersion("Genetic v2",   num_generations=100),
+        AlgorithmVersion("PSO", num_generations=50),
+        AlgorithmVersion("GA",   num_generations=100),
     ]
 
     app = VisualizerApp(versions)
 
     def on_gen_changed(version_index: int, generation: int):
-        container = ...  # fetch the right container
+        container = ...generate
         app.set_container(container)
 
     app.on_generation_changed = on_gen_changed
@@ -173,13 +172,38 @@ class VisualizerApp:
 
     def set_container(self, container: Container):
         self.container = container
-        self.reset_view()
+        self.fit_view()
+
+    def fit_view(self):
+        """Scale and center the container to fill the canvas."""
+        if self.container is None or self.container.width == 0 or self.container.height == 0:
+            self.shiftX = 0
+            self.shiftY = 0
+            self.zoom = 1.0
+            self.draw()
+            return
+
+        padding = 20  # pixels of breathing room on each side
+
+        scale_x = (self.canvas_width  - 2 * padding) / self.container.width
+        scale_y = (self.canvas_height - 2 * padding) / self.container.height
+        fit_scale = min(scale_x, scale_y)
+
+        # base_scale is set in draw() as canvas_width / container.width;
+        # zoom is the multiplier on top of that, so derive zoom from fit_scale
+        self.base_scale = self.canvas_width / self.container.width
+        self.zoom = fit_scale / self.base_scale
+
+        # Center the scaled container in the canvas
+        scaled_w = self.container.width  * fit_scale
+        scaled_h = self.container.height * fit_scale
+        self.shiftX = (self.canvas_width  - scaled_w) / 2
+        self.shiftY = (self.canvas_height - scaled_h) / 2
+
+        self.draw()
 
     def reset_view(self):
-        self.shiftX = 0
-        self.shiftY = 0
-        self.zoom = 1.0
-        self.draw()
+        self.fit_view()
 
     def zoom_in(self, factor=1.1):
         self.zoom *= factor
@@ -209,8 +233,9 @@ class VisualizerApp:
         if self.container is None or self.container.width == 0:
             return
 
-        # Compute base scale once (fit container width)
-        self.base_scale = self.canvas_width / self.container.width
+        # base_scale is set by fit_view(); only initialise here as a fallback
+        if self.base_scale == 1.0:
+            self.base_scale = self.canvas_width / self.container.width
 
         # Container boundary
         cx1, cy1, cx2, cy2 = self._scale_coords(
@@ -338,4 +363,5 @@ class VisualizerApp:
     # ======================================================
 
     def run(self):
+        self._fire_generation_changed()
         self.root.mainloop()

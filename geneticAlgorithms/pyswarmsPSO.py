@@ -37,6 +37,7 @@ class PySwarmsPSO:
         self.best_cost = None
         self.best_position = None
         self.best_solutions = []
+        self.global_best_sol = None
         self.storeSolutions = store_best_solution_per_gen
 
     def myFitnessFunc(self, swarm_positions):
@@ -45,10 +46,7 @@ class PySwarmsPSO:
         Returns array of costs (container heights)
         """
         costs = []
-
-        best_cost = float("inf")
-        best_stats = None
-        this_gen_best_sol = None
+        new_best_found = False
 
         for particle in swarm_positions:
             sorted_input = sort_with_keys(self.rectangles, particle)
@@ -60,17 +58,6 @@ class PySwarmsPSO:
             costs.append(cost)
             self.iterCount += 1
 
-            if cost < best_cost:
-                best_cost = cost
-                best_stats = {
-                    "best_score": 1.0 / cost if cost > 0 else 0,
-                    "best_height": height,
-                    "best_width": width,
-                    "best_density": density
-                }
-                if self.storeSolutions:
-                     this_gen_best_sol = particle
-
             if cost < self.global_best_cost:
                 self.global_best_cost = cost
                 self.global_best_stats = {
@@ -79,20 +66,22 @@ class PySwarmsPSO:
                     "best_width": width,
                     "best_density": density
                 }
+                new_best_found = True
+                self.global_best_sol = particle.copy()
 
         
         
         if self.tracker:
             self.tracker.log(
                 generation=self.current_generation,
-                best_score=best_stats["best_score"],
-                best_height=best_stats["best_height"],
-                best_width=best_stats["best_width"],
-                best_density=best_stats["best_density"],
+                best_score=self.global_best_stats["best_score"],
+                best_height=self.global_best_stats["best_height"],
+                best_width=self.global_best_stats["best_width"],
+                best_density=self.global_best_stats["best_density"],
             )
         
-        if self.storeSolutions:
-            self.best_solutions.append(this_gen_best_sol)
+        if self.storeSolutions and new_best_found:
+            self.best_solutions.append(self.global_best_sol.copy())
         
         self.current_generation += 1
 
@@ -112,10 +101,6 @@ class PySwarmsPSO:
             iters=iters,
             verbose=False
         )
-
-        #self.best_cost = cost
-        #self.best_position = pos
-
         return {
             "solution": pos,
             "density": self.global_best_stats["best_density"],
