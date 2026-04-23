@@ -5,6 +5,26 @@ class ExperimentTracker:
         self.start_time = None
         self.name = name
         self.records = []
+        self._best_so_far = {
+            "best_score": None,
+            "best_height": None,
+            "best_width": None,
+            "best_density": None
+        }
+
+    def _update_best(self, best_score, best_height, best_width, best_density):
+        if best_score is None:
+            return
+
+        current_best = self._best_so_far["best_score"]
+
+        if current_best is None or best_score > current_best:
+            self._best_so_far = {
+                "best_score": best_score,
+                "best_height": best_height,
+                "best_width": best_width,
+                "best_density": best_density
+            }
 
     def start(self):
         self.start_time = time.perf_counter()
@@ -19,12 +39,14 @@ class ExperimentTracker:
     ):
         elapsed = time.perf_counter() - self.start_time
 
+        self._update_best(best_score, best_height, best_width, best_density)
+
         self.records.append({
             "generation": generation,
-            "best_score": best_score,
-            "best_height": best_height,
-            "best_width": best_width,
-            "best_density": best_density,
+            "best_score": self._best_so_far["best_score"],
+            "best_height": self._best_so_far["best_height"],
+            "best_width": self._best_so_far["best_width"],
+            "best_density": self._best_so_far["best_density"],
             "elapsed_time": elapsed
         })
 
@@ -36,17 +58,15 @@ class ExperimentTracker:
         best_width: float = None,
         best_density: float = None
     ):
-        # find the record for the given generation
+        self._update_best(best_score, best_height, best_width, best_density)
+
         for record in self.records:
             if record["generation"] == generation:
-                if best_score is not None:
-                    record["best_score"] = best_score
-                if best_height is not None:
-                    record["best_height"] = best_height
-                if best_width is not None:
-                    record["best_width"] = best_width
-                if best_density is not None:
-                    record["best_density"] = best_density
+                # overwrite with BEST SO FAR
+                record["best_score"] = self._best_so_far["best_score"]
+                record["best_height"] = self._best_so_far["best_height"]
+                record["best_width"] = self._best_so_far["best_width"]
+                record["best_density"] = self._best_so_far["best_density"]
                 return
 
         raise ValueError(f"Generation {generation} not found")

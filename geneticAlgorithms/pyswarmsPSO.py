@@ -11,7 +11,7 @@ class PySwarmsPSO:
         self.rectangles = rectangles
         self.containerWidth = containerWidth
         self.config = config
-
+        self.n_rects = len(rectangles)
         
 
         #hyperparameters
@@ -28,7 +28,7 @@ class PySwarmsPSO:
             bounds=(np.zeros(self.n_rects), np.ones(self.n_rects)),
         )
         # STAT TRACKING
-        self.n_rects = len(rectangles)
+        
         self.tracker : ExperimentTracker = None
         self.best_stats = None
         self.iterCount = 0
@@ -101,6 +101,7 @@ class PySwarmsPSO:
             self.myFitnessFunc,
             iters=iters,
             verbose=False
+            
         )
         return {
             "solution": pos,

@@ -238,7 +238,7 @@ def rectangle_sliding(rectangles: list[Rectangle], initialDirections : list[floa
         r.setPosition(rectPosition)
         cont.add_rectangle(r)
         addPositions(r,cont,positions)
-        cleanPositions(positions, cont)
+        #cleanPositions(positions, cont)
 
     
     return cont

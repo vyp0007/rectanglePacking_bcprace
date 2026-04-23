@@ -1,8 +1,8 @@
 import pygad
 #from placement.otherAlgorithms.PositionsBLF import *
-from placement.otherAlgorithms.bottomLeftFill import *
+#from placement.otherAlgorithms.bottomLeftFill import *
 from utils.sortInput import sort_with_keys
-from placement import bottomLeftFillSortedLists
+from placement.bottomLeftFillSortedLists import bottom_left_fill
 class PygadGA:
     def __init__(self, rectangles, containerWidth, config: dict, tracker = None):
         self.rectangles = rectangles
@@ -10,6 +10,7 @@ class PygadGA:
         self.config = config
         self.tracker = tracker
         self.useRtreeInPLacement = config.get("useRTree",False)
+        self._containers_cache = {}
 
         self.ga_instance = pygad.GA(
             num_generations=config["num_generations"],
@@ -31,21 +32,29 @@ class PygadGA:
     def myFitnessFunc(self, ga_instance, solution, solution_idx):
         sorted_input = sort_with_keys(self.rectangles, solution)
         cont = bottom_left_fill(self.containerWidth, sorted_input, self.useRtreeInPLacement)
-        #cont = bottom_left_fill(self.containerWidth, sorted_input, self.useRtreeInPLacement)
-        return 1.0 / cont.height
+        if self.tracker:
+            self._containers_cache[solution_idx] = cont
+
+        return cont.getDensity()
     
     def on_generation(self, ga_instance):
         if not self.tracker:
             return
 
         fitnesses = ga_instance.last_generation_fitness
-        best_fitness = max(fitnesses)
+        best_idx = fitnesses.index(max(fitnesses))
+        best_fitness = fitnesses[best_idx]
+
+        best_cont = self._containers_cache.get(best_idx)
 
         self.tracker.log(
             generation=ga_instance.generations_completed - 1,
             best_score=best_fitness,
-            best_height=1.0 / best_fitness
+            best_density=1.0 / best_fitness,
+            best_height=best_cont.getHeight() if best_cont else None,
+            best_width=best_cont.getWidth() if best_cont else None,
         )
+        self._containers_cache.clear()
 
     def run(self):
         if(self.tracker):
@@ -55,5 +64,5 @@ class PygadGA:
         return {
             "solution": solution,
             "fitness": fitness,
-            "height": 1.0 / fitness
+            "density": fitness
         }
