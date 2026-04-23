@@ -5,7 +5,7 @@ from utils import sortInput
 from utils.rectangleFileLoader import load_rectangles_from_json
 import json
 from basicComponents.rectangle import Rectangle
-from geneticAlgorithms import pygadGenetic, pyswarmsPSO, pyswarmsPSO_sliding
+from geneticAlgorithms import pygadGenetic, pyswarmsPSO, pyswarmsPSO_sliding, pygadGenetic_sliding
 from basicComponents.rectangleContainer import Container
 from utils.stats.experimentTracker import ExperimentTracker
 from visualizerImproved import VisualizerApp, AlgorithmVersion
@@ -31,7 +31,7 @@ def build_container_from_solution_sliding(solution, rectangles):
 
 if __name__ == "__main__":
     width, rectangles = load_rectangles_from_json("problems/mid_256.json")
-    GAconfig = {"num_generations": 30, "sol_per_pop": 30, "num_parents_mating": 12, "useRTree" : False}
+    GAconfig = {"num_generations": 10, "sol_per_pop": 30, "num_parents_mating": 12, "useRTree" : False}
     tracker = ExperimentTracker()
     ga = pygadGenetic.PygadGA(rectangles, width, GAconfig, tracker)
     start_time = time.perf_counter()
@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     PSOconfig = {
         "iters": 30,
-        "n_particles": 30,
+        "n_particles": 10,
         "c1": 1.5,
         "c2": 1.5,
         "w": 0.7,
@@ -52,24 +52,30 @@ if __name__ == "__main__":
     end_time = time.perf_counter()
     print(f"run PSO took {end_time - start_time:.6f} seconds")
 
-    PSOslidingConfig = {
-        "iters": 5,
-        "n_particles": 5,
-        "c1": 1.5,
-        "c2": 1.5,
-        "w": 0.7,
-    }
+    """
+    PSOslidingConfig = {"iters": 5,"n_particles": 5,"c1": 1.5,"c2": 1.5,"w": 0.7,    }
     psoSliding = pyswarmsPSO_sliding.PySwarmsPSO_sliding(rectangles,PSOslidingConfig)
     start_time = time.perf_counter()
     psoSliding.run()
     end_time = time.perf_counter()
     print(f"run PSO took {end_time - start_time:.6f} seconds")
+    """
+    
+    pygaDslidingConfig = {"num_generations": 2, "sol_per_pop": 4, "num_parents_mating": 3, "useRTree" : False}
+    pygaDsliding = pygadGenetic_sliding.PygadGA_sliding(rectangles,pygaDslidingConfig)
+    start_time = time.perf_counter()
+    pygaDsliding.run()
+    end_time = time.perf_counter()
+    print(f"run GA sliding took {end_time - start_time:.6f} seconds")
     
 
-    gaGens = ga.ga_instance.best_solutions
+    gaGens = ga.best_solutions
     psoGens = pso.best_solutions
-    slidingGens = psoSliding.best_solutions
-    versions = [AlgorithmVersion("GA",len(gaGens)),AlgorithmVersion("PSO",len(psoGens)),AlgorithmVersion("PSO sliding",len(slidingGens))]
+    slidingGens = pygaDsliding.best_solutions
+    versions = []
+    versions.append(AlgorithmVersion("GA",len(gaGens)))
+    versions.append(AlgorithmVersion("PSO",len(psoGens)))
+    versions.append(AlgorithmVersion("GA sliding",len(slidingGens)))
     gensArray = [gaGens,psoGens,slidingGens]
 
     app = VisualizerApp(versions)

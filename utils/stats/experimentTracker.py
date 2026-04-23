@@ -62,7 +62,6 @@ class ExperimentTracker:
 
         for record in self.records:
             if record["generation"] == generation:
-                # overwrite with BEST SO FAR
                 record["best_score"] = self._best_so_far["best_score"]
                 record["best_height"] = self._best_so_far["best_height"]
                 record["best_width"] = self._best_so_far["best_width"]

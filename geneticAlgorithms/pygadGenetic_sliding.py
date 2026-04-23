@@ -3,11 +3,11 @@ import pygad
 #from placement.otherAlgorithms.PositionsBLF import *
 #from placement.otherAlgorithms.bottomLeftFill import *
 from utils.sortInput import sort_with_keys
-from placement.bottomLeftFillSortedLists import bottom_left_fill
-class PygadGA:
-    def __init__(self, rectangles, containerWidth, config: dict, tracker = None, store_best_solutions_per_gen : bool = True):
+from placement.RectangleSliding import rectangle_sliding
+
+class PygadGA_sliding:
+    def __init__(self, rectangles, config: dict, tracker = None, store_best_solutions_per_gen : bool = True ):
         self.rectangles = rectangles
-        self.containerWidth = containerWidth
         self.config = config
         self.tracker = tracker
         self.useRtreeInPLacement = config.get("useRTree",False)
@@ -24,7 +24,7 @@ class PygadGA:
             parent_selection_type=config.get("parent_selection_type", "sss"),
             mutation_type=config.get("mutation_type", "random"),
             crossover_type=config.get("crossover_type", "single_point"),
-            num_genes=len(self.rectangles),
+            num_genes=len(self.rectangles) * 2,
             fitness_func=self.myFitnessFunc,
             init_range_low=0,
             init_range_high=1,
@@ -33,15 +33,17 @@ class PygadGA:
         )
 
     def myFitnessFunc(self, ga_instance, solution, solution_idx):
-        sorted_input = sort_with_keys(self.rectangles, solution)
-        cont = bottom_left_fill(self.containerWidth, sorted_input, self.useRtreeInPLacement)
+        n = len(self.rectangles)   
+        rectOrder = solution[:n]
+        rectDirs = solution[n:]
+        sorted_input = sort_with_keys(self.rectangles, rectOrder)
+        cont = rectangle_sliding(sorted_input,rectDirs)
         if self.tracker:
             self._containers_cache[solution_idx] = cont
 
         return cont.getDensity()
     
-    def on_generation(self, ga_instance):
-        
+    def on_generation(self, ga_instance):        
 
         fitnesses = ga_instance.last_generation_fitness
         best_idx = np.argmax(fitnesses)
