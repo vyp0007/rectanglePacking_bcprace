@@ -121,16 +121,10 @@ def addPositions(newRectangle: Rectangle, container: DynamicContainer, positions
     y = newRectangle.y
     w = newRectangle.width
     h = newRectangle.height
-    newPos = []
-    newPos.append(Position(newRectangle.x, newRectangle.y + newRectangle.height))
-    newPos.append(Position(newRectangle.x + newRectangle.width,newRectangle.y))
-    newPos.append(Position(newRectangle.x + newRectangle.width,newRectangle.y + newRectangle.height))
-    for r in container.rectangles:
-        for p in newPos:
-            if not posKilledByRect(p,r):
-                positions.add(p)
-            else:
-                print("position filtered")
+    
+    positions.add(Position(newRectangle.x, newRectangle.y + newRectangle.height))
+    positions.add(Position(newRectangle.x + newRectangle.width,newRectangle.y))
+    positions.add(Position(newRectangle.x + newRectangle.width,newRectangle.y + newRectangle.height))
 
 
 def posKilledByRect(pos : Position, rectangle : Rectangle):
