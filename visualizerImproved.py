@@ -277,6 +277,7 @@ class VisualizerApp:
         version = self.versions[self.current_version]
         current_height = getattr(self.container, "height", 0) if self.container else 0
         current_width = getattr(self.container, "width", 0) if self.container else 0
+        current_density = self.container.getDensity() if self.container else 0
 
         self.info_label.config(
             text=(
@@ -284,7 +285,9 @@ class VisualizerApp:
                 f"  {version.name}\n"
                 f"Generation: {self.current_generation + 1}/{version.num_generations}\n"
                 f"Height: {current_height:.2f}\n"
-                f"Width:  {current_width:.2f}"
+                f"Width:  {current_width:.2f}\n"
+                f"Density:  {current_density:.2f}"
+
             )
         )
 
